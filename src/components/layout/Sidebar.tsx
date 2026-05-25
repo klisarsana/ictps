@@ -7,7 +7,6 @@ import {
   Target,
   Users,
   Folder,
-  Settings,
   Blocks,
 } from "lucide-react";
 
