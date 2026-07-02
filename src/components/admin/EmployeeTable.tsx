@@ -7,9 +7,10 @@ import Link from "next/link";
 
 interface EmployeeTableProps {
   data: EmployeeSummary[];
+  type?: "karyawan" | "coach";
 }
 
-export function EmployeeTable({ data }: EmployeeTableProps) {
+export function EmployeeTable({ data, type = "karyawan" }: EmployeeTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Lengkap" | "Belum Selesai">("All");
 
@@ -63,8 +64,12 @@ export function EmployeeTable({ data }: EmployeeTableProps) {
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs font-semibold tracking-wider">
               <th className="p-4 px-6">Nama Pegawai</th>
-              <th className="p-4 px-6 text-center">Status Pemetaan</th>
-              <th className="p-4 px-6 text-center">Rata-rata Skor<br/><span className="text-[10px] text-slate-400 font-medium normal-case">(Kekuatan, Tantangan, Mental)</span></th>
+              {type !== "coach" && (
+                <>
+                  <th className="p-4 px-6 text-center">Status Pemetaan</th>
+                  <th className="p-4 px-6 text-center">Rata-rata Skor<br/><span className="text-[10px] text-slate-400 font-medium normal-case">(Kekuatan, Tantangan, Mental)</span></th>
+                </>
+              )}
               <th className="p-4 px-6 text-center">Total Sesi Coaching</th>
               <th className="p-4 px-6 text-center">Aksi</th>
             </tr>
@@ -79,30 +84,34 @@ export function EmployeeTable({ data }: EmployeeTableProps) {
                       <span className="text-sm text-slate-500">{employee.email}</span>
                     </div>
                   </td>
-                  <td className="p-4 px-6 text-center">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                        employee.status_pemetaan === "Lengkap"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-red-50 text-red-700 border-red-200"
-                      }`}
-                    >
-                      {employee.status_pemetaan}
-                    </span>
-                  </td>
-                  <td className="p-4 px-6 text-center">
-                    <div className="flex items-center justify-center gap-3 text-sm font-medium">
-                      <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded" title="Kekuatan">
-                        {employee.avg_kekuatan?.toFixed(1) || "-"}
-                      </span>
-                      <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded" title="Tantangan">
-                        {employee.avg_tantangan?.toFixed(1) || "-"}
-                      </span>
-                      <span className="text-purple-600 bg-purple-50 px-2 py-0.5 rounded" title="Mental">
-                        {employee.avg_mental?.toFixed(1) || "-"}
-                      </span>
-                    </div>
-                  </td>
+                  {type !== "coach" && (
+                    <>
+                      <td className="p-4 px-6 text-center">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                            employee.status_pemetaan === "Lengkap"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-red-50 text-red-700 border-red-200"
+                          }`}
+                        >
+                          {employee.status_pemetaan}
+                        </span>
+                      </td>
+                      <td className="p-4 px-6 text-center">
+                        <div className="flex items-center justify-center gap-3 text-sm font-medium">
+                          <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded" title="Kekuatan">
+                            {employee.avg_kekuatan?.toFixed(1) || "-"}
+                          </span>
+                          <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded" title="Tantangan">
+                            {employee.avg_tantangan?.toFixed(1) || "-"}
+                          </span>
+                          <span className="text-purple-600 bg-purple-50 px-2 py-0.5 rounded" title="Mental">
+                            {employee.avg_mental?.toFixed(1) || "-"}
+                          </span>
+                        </div>
+                      </td>
+                    </>
+                  )}
                   <td className="p-4 px-6 text-center">
                     <span className="text-slate-700 font-medium">
                       {employee.total_coaching_sessions}
@@ -110,7 +119,7 @@ export function EmployeeTable({ data }: EmployeeTableProps) {
                   </td>
                   <td className="p-4 px-6 text-center">
                     <Link
-                      href={`/admin/employee/${employee.user_id}`}
+                      href={type === "coach" ? `/admin/coach/${employee.user_id}` : `/admin/employee/${employee.user_id}`}
                       className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm group"
                     >
                       <span>Lihat Detail</span>

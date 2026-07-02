@@ -8,6 +8,7 @@ import {
   Users,
   Folder,
   Blocks,
+  Calendar,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -23,10 +24,21 @@ export function Sidebar({ role = "karyawan", onClose }: SidebarProps) {
   if (role === "admin") {
     navigation = [
       { name: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      { name: "Manajemen Pengguna", href: "/admin/users", icon: Users },
+    ];
+  } else if (role === "coach") {
+    navigation = [
+      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Jadwal Coaching Saya", href: "/coach/jadwal-saya", icon: Calendar },
+      { name: "Persetujuan Jadwal", href: "/coach/jadwal", icon: Calendar },
+      { name: "Pemetaan Diri", href: "/pemetaan-diri", icon: Target },
+      { name: "Coaching Record", href: "/coaching", icon: Users },
+      { name: "Portofolio", href: "/portfolio", icon: Folder },
     ];
   } else {
     navigation = [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Jadwal Coaching Saya", href: "/karyawan/jadwal", icon: Calendar },
       { name: "Pemetaan Diri", href: "/pemetaan-diri", icon: Target },
       { name: "Coaching Record", href: "/coaching", icon: Users },
       { name: "Portofolio", href: "/portfolio", icon: Folder },

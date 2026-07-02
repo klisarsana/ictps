@@ -19,12 +19,21 @@ export default async function CoachingHistoryPage() {
     redirect("/login");
   }
 
-  // Ambil semua riwayat coaching, urutkan dari yang terbaru
-  const { data: records } = await supabase
+  const role = user.user_metadata?.role;
+  const userName = user.user_metadata?.name || user.email?.split("@")[0] || "User";
+
+  let recordsQuery = supabase
     .from("coaching_records")
     .select("*")
-    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+
+  if (role === "karyawan") {
+    recordsQuery = recordsQuery.ilike("nama_coachee", userName); // using ilike
+  } else {
+    recordsQuery = recordsQuery.eq("user_id", user.id);
+  }
+
+  const { data: records } = await recordsQuery;
 
   const hasRecords = records && records.length > 0;
 
@@ -43,23 +52,24 @@ export default async function CoachingHistoryPage() {
             </p>
           </div>
         </div>
-        
-        <Link
-          href="/coaching/create"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-coach-record hover:bg-coach-record/90 text-white text-sm font-bold rounded-lg transition-all shadow-sm hover:shadow"
-        >
-          {hasRecords ? (
-            <>
-              <ArrowRight className="w-4 h-4" />
-              Update Data (Sesi Baru)
-            </>
-          ) : (
-            <>
-              <Plus className="w-4 h-4" />
-              Catat Sesi Pertama
-            </>
-          )}
-        </Link>
+        {user.user_metadata?.role !== "karyawan" && (
+          <Link
+            href="/coaching/create"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-coach-record hover:bg-coach-record/90 text-white text-sm font-bold rounded-lg transition-all shadow-sm hover:shadow"
+          >
+            {hasRecords ? (
+              <>
+                <ArrowRight className="w-4 h-4" />
+                Update Data (Sesi Baru)
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Catat Sesi Pertama
+              </>
+            )}
+          </Link>
+        )}
       </div>
 
       {/* History List */}
@@ -88,13 +98,15 @@ export default async function CoachingHistoryPage() {
             <p className="text-text-secondary max-w-sm mb-6">
               Anda belum mencatat riwayat sesi coaching. Silakan tambah catatan pertama Anda.
             </p>
-            <Link
-              href="/coaching/create"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-coach-record text-white text-sm font-bold rounded-lg hover:bg-coach-record/90 transition-all shadow-sm hover:shadow"
-            >
-              <Plus className="w-4 h-4" />
-              Catat Sesi Baru
-            </Link>
+            {user.user_metadata?.role !== "karyawan" && (
+              <Link
+                href="/coaching/create"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-coach-record text-white text-sm font-bold rounded-lg hover:bg-coach-record/90 transition-all shadow-sm hover:shadow"
+              >
+                <Plus className="w-4 h-4" />
+                Catat Sesi Baru
+              </Link>
+            )}
           </div>
         )}
       </div>

@@ -1,49 +1,71 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
+import { UserRole } from "./types/auth";
 
-// Routes that require authentication
-const protectedRoutes = [
-  "/dashboard",
-  "/pemetaan-diri",
-  "/coaching",
-  "/portfolio",
-  "/admin",
-];
-
-// Routes that should redirect to dashboard if already authenticated
-const authRoutes = ["/", "/register"];
+const authRoutes = ["/", "/register", "/login"];
 
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
 
   const { pathname } = request.nextUrl;
 
-  // Check if the current path matches any protected route
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-
-  // Check if the current path is an auth route
   const isAuthRoute = authRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
-  // If the user is NOT authenticated and tries to access a protected route,
-  // redirect them to the login page (now root /).
-  if (isProtectedRoute && !user) {
+  const userRole = user?.user_metadata?.role as UserRole | undefined;
+
+  if (isAuthRoute) {
+    if (user) {
+      if (userRole === "admin") {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      } else {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+    }
+    return response;
+  }
+
+  // Paths that do not require authentication
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/static")
+  ) {
+    return response;
+  }
+
+  // If no user, redirect to login for all protected routes
+  if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    // Preserve the original URL so we can redirect back after login
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
 
-  // If the user IS authenticated and tries to access an auth route,
-  // redirect them to the dashboard.
-  if (isAuthRoute && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+  // Protect Admin routes
+  if (pathname.startsWith("/admin")) {
+    if (userRole !== "admin") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
+  // Protect Coach routes
+  if (
+    pathname === "/coach" ||
+    pathname.startsWith("/coach/") ||
+    pathname.startsWith("/coaching/create")
+  ) {
+    if (userRole !== "coach" && userRole !== "admin") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
+  // Protect Karyawan routes
+  if (pathname.startsWith("/karyawan")) {
+    if (userRole !== "karyawan") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   return response;

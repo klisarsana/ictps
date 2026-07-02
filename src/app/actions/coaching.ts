@@ -5,7 +5,7 @@ import { CoachingSchema } from "@/lib/validations/coaching";
 import { generateCoachingSummary } from "@/lib/ai/summarize";
 import * as z from "zod";
 
-export async function submitCoachingAction(data: z.infer<typeof CoachingSchema>) {
+export async function submitCoachingAction(data: z.infer<typeof CoachingSchema>, menteeId?: string, bookingId?: string) {
   try {
     const validatedData = CoachingSchema.parse(data);
     const supabase = await createClient();
@@ -16,6 +16,28 @@ export async function submitCoachingAction(data: z.infer<typeof CoachingSchema>)
       return { error: "Unauthorized. Please log in again." };
     }
 
+    // Use menteeId from frontend if provided, otherwise fallback to finding the booking
+    let targetUserId = menteeId;
+
+    if (!targetUserId) {
+      const { data: activeBooking } = await supabase
+        .from("booking_coaching")
+        .select("id, karyawan_id")
+        .eq("coach_id", user.id)
+        .eq("status", "Disetujui")
+        .order("tanggal_usulan", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+        
+      targetUserId = activeBooking ? activeBooking.karyawan_id : user.id;
+    }
+
+    console.log("=== SUBMIT COACHING DEBUG ===");
+    console.log("Coach ID:", user.id);
+    console.log("Mentee ID passed:", menteeId);
+    console.log("Final Target User ID:", targetUserId);
+
+    // Step 2: Insert into coaching_records for the Coach (owner)
     const { error: insertError } = await supabase
       .from("coaching_records")
       .insert({
@@ -23,19 +45,23 @@ export async function submitCoachingAction(data: z.infer<typeof CoachingSchema>)
         ...validatedData
       });
 
+    console.log("Insert Error:", insertError);
+
     if (insertError) {
       console.error("Supabase insert error (coaching_records):", insertError);
-      return { error: "Gagal menyimpan data Coaching Record. Silakan coba lagi." };
+      return { error: `Gagal menyimpan data Coaching Record: ${insertError.message}` };
     }
 
-    // Step 2: Call AI Summary Utility
+    // Step 3: Call AI Summary Utility
     const summary = await generateCoachingSummary(validatedData);
 
-    // Step 3: Fetch the mentee's most recent pemetaan_diri record
+    // Step 4: Fetch the mentee's most recent pemetaan_diri record
+    // Use the targetUserId already defined above
+
     const { data: pemetaanData, error: pemetaanFetchError } = await supabase
       .from("pemetaan_diri")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", targetUserId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -53,6 +79,22 @@ export async function submitCoachingAction(data: z.infer<typeof CoachingSchema>)
 
       if (pemetaanUpdateError) {
         console.error("Error updating pemetaan_diri with summary:", pemetaanUpdateError);
+      }
+    }
+
+    // Step 5: Auto-Delete Hygiene for MS Teams link
+    const activeBookingId = bookingId || (activeBooking ? activeBooking.id : null);
+    if (activeBookingId) {
+      const { error: hygieneError } = await supabase
+        .from("booking_coaching")
+        .update({
+          status: "Selesai",
+          teams_link: null
+        })
+        .eq("id", activeBookingId);
+
+      if (hygieneError) {
+        console.error("Error performing data hygiene on booking:", hygieneError);
       }
     }
 

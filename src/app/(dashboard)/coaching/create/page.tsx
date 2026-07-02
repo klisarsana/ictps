@@ -6,10 +6,14 @@ export const metadata: Metadata = {
   description: "Isi form Coaching Record untuk mendokumentasikan sesi pengembangan talenta Anda.",
 };
 
+import { Suspense } from "react";
+
 export default function CoachingCreatePage() {
   return (
     <div className="max-w-4xl mx-auto py-8">
-      <CoachingForm />
+      <Suspense fallback={<div className="p-8 text-center">Loading form...</div>}>
+        <CoachingForm />
+      </Suspense>
     </div>
   );
 }

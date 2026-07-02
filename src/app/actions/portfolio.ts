@@ -18,14 +18,24 @@ export async function getPortfolioData(userId: string) {
     .limit(1)
     .single();
 
-  // 2. Fetch latest coaching_records
-  const { data: coaching, error: coachingError } = await supabase
+  // Fetch user role and name to correctly query coaching_records
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const role = authUser?.user_metadata?.role;
+  const userName = authUser?.user_metadata?.name || authUser?.email?.split("@")[0] || "User";
+
+  // 2. Fetch all coaching_records (newest to oldest)
+  let coachingQuery = supabase
     .from("coaching_records")
     .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
+    .order("created_at", { ascending: false });
+
+  if (role === "karyawan") {
+    coachingQuery = coachingQuery.ilike("nama_coachee", userName);
+  } else {
+    coachingQuery = coachingQuery.eq("user_id", userId);
+  }
+
+  const { data: coaching, error: coachingError } = await coachingQuery;
 
   // 3. Fetch all capaian_kinerja
   const { data: capaian, error: capaianError } = await supabase

@@ -11,6 +11,7 @@ import {
   Flame,
   Clock,
 } from "lucide-react";
+import Link from "next/link";
 
 interface ActionPlanItem {
   langkah: string;
@@ -100,20 +101,28 @@ export function CoachingHistoryItem({
                 </span>
               </div>
 
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-1.5 text-xs font-bold text-brand-navy hover:text-brand-navy/80 transition-colors"
-              >
-                {isExpanded ? (
-                  <>
-                    Tutup Detail <ChevronUp className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    Lihat Detail Lengkap <ChevronDown className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+              <div className="flex gap-4 items-center">
+                <Link
+                  href={`/coaching/${record.id}`}
+                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-brand-navy hover:bg-brand-navy/90 px-3 py-1.5 rounded transition-colors"
+                >
+                  Lihat Seluruh Form
+                </Link>
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-brand-navy hover:text-brand-navy/80 transition-colors"
+                >
+                  {isExpanded ? (
+                    <>
+                      Tutup Ringkasan <ChevronUp className="w-4 h-4" />
+                    </>
+                  ) : (
+                    <>
+                      Lihat Ringkasan <ChevronDown className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* EXPANDABLE CONTENT */}

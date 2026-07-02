@@ -45,16 +45,26 @@ export default async function AdminDashboardPage() {
         {/* Top Statistics Cards */}
         <StatCards data={data} />
 
-        {/* Interactive Data Table Section */}
+        {/* Interactive Data Table Section - Pegawai */}
         <section>
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-800">Direktori Pegawai</h2>
+            <h2 className="text-2xl font-bold text-slate-800">Direktori Pegawai (Karyawan)</h2>
             <p className="text-slate-500 mt-1">
               Kelola dan pantau progres seluruh karyawan dari satu tempat.
             </p>
           </div>
-          
-          <EmployeeTable data={data} />
+          <EmployeeTable data={data.filter(emp => emp.role === 'karyawan')} />
+        </section>
+
+        {/* Interactive Data Table Section - Coach */}
+        <section className="mt-12">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-slate-800">Direktori Coach</h2>
+            <p className="text-slate-500 mt-1">
+              Daftar seluruh coach beserta aktivitas mentoring mereka.
+            </p>
+          </div>
+          <EmployeeTable data={data.filter(emp => emp.role === 'coach')} type="coach" />
         </section>
 
       </div>

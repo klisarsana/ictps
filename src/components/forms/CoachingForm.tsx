@@ -7,10 +7,14 @@ import { DynamicActionPlanTable } from "@/components/ui/DynamicActionPlanTable";
 import { Save, Users, AlertCircle } from "lucide-react";
 import { submitCoachingAction } from "@/app/actions/coaching";
 import { CoachingSchema, CoachingFormValues } from "@/lib/validations/coaching";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function CoachingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const menteeName = searchParams.get("menteeName") || "";
+  const sessionDate = searchParams.get("sessionDate") || "";
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorSubmit, setErrorSubmit] = useState("");
 
@@ -18,6 +22,8 @@ export function CoachingForm() {
     // @ts-expect-error - Zod coerce causes input/output type mismatch with RHF
     resolver: zodResolver(CoachingSchema),
     defaultValues: {
+      nama_coachee: menteeName,
+      tanggal_sesi: sessionDate,
       action_plan: [{ langkah: "", waktu: "", output: "" }],
     },
     mode: "onBlur",
@@ -29,9 +35,13 @@ export function CoachingForm() {
     setIsSubmitting(true);
     setErrorSubmit("");
     try {
-      const result = await submitCoachingAction(data);
+      const menteeId = searchParams.get("menteeId") || undefined;
+      const bookingId = searchParams.get("bookingId") || undefined;
+      const result = await submitCoachingAction(data, menteeId, bookingId);
       if (result.error) {
         setErrorSubmit(result.error);
+        alert("Error: " + result.error);
+        window.scrollTo(0, 0);
       } else {
         router.push("/dashboard"); 
       }
@@ -103,7 +113,7 @@ export function CoachingForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className={labelClasses}>Nama Coachee</label>
-              <input type="text" {...register("nama_coachee")} className={inputClasses(!!errors.nama_coachee)} />
+              <input type="text" {...register("nama_coachee")} readOnly className={inputClasses(!!errors.nama_coachee) + " bg-slate-100 text-slate-500 cursor-not-allowed pointer-events-none"} />
               {errors.nama_coachee && <p className={errorClasses}>{errors.nama_coachee.message}</p>}
             </div>
             <div>
@@ -118,7 +128,7 @@ export function CoachingForm() {
             </div>
             <div>
               <label className={labelClasses}>Tanggal Sesi</label>
-              <input type="date" {...register("tanggal_sesi")} className={inputClasses(!!errors.tanggal_sesi)} />
+              <input type="date" {...register("tanggal_sesi")} readOnly className={inputClasses(!!errors.tanggal_sesi) + " bg-slate-100 text-slate-500 cursor-not-allowed pointer-events-none"} />
               {errors.tanggal_sesi && <p className={errorClasses}>{errors.tanggal_sesi.message}</p>}
             </div>
             <div className="md:col-span-2">

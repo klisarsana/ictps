@@ -36,22 +36,37 @@ export default async function DashboardPage() {
   const pemetaanData = pemetaanDataList?.[0] || null;
   const totalPemetaan = pemetaanCount || 0;
 
-  // Fetch Coaching Record data and exact count
-  const { data: coachingDataList, count: coachingCount } = await supabase
+  let coachingQuery = supabase
     .from("coaching_records")
     .select("*", { count: "exact" })
-    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1);
+
+  if (user.user_metadata?.role === "karyawan") {
+    coachingQuery = coachingQuery.ilike("nama_coachee", userName); // using ilike for case insensitivity
+  } else {
+    coachingQuery = coachingQuery.eq("user_id", user.id);
+  }
+
+  const { data: coachingDataList, count: coachingCount } = await coachingQuery;
 
   const coachingData = coachingDataList?.[0] || null;
   const totalCoaching = coachingCount || 0;
 
-  // Kalkulasi sederhana kelengkapan profil
-  // 33% jika akun aktif, 33% jika sudah mengisi pemetaan, 34% jika sudah melakukan coaching
-  let profilLengkap = 33;
-  if (totalPemetaan > 0) profilLengkap += 33;
-  if (totalCoaching > 0) profilLengkap += 34;
+  // Fetch Kompetensi Manajerial data
+  const { data: kompetensiDataList, count: kompetensiCount } = await supabase
+    .from("kompetensi_manajerial")
+    .select("*", { count: "exact" })
+    .eq("karyawan_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  const kompetensiData = kompetensiDataList?.[0] || null;
+  const totalKompetensi = kompetensiCount || 0;
+
+  let profilLengkap = 25;
+  if (totalPemetaan > 0) profilLengkap += 35;
+  if (totalCoaching > 0) profilLengkap += 40;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -115,15 +130,23 @@ export default async function DashboardPage() {
                 <h2 className="text-lg font-bold text-text-primary">Coaching Record</h2>
               </div>
               <p className="text-sm text-text-secondary mb-6 flex-1">
-                Catat sesi coaching Anda bersama atasan, tetapkan tujuan, dan evaluasi hasil secara berkala.
+                {user.user_metadata?.role === "karyawan" 
+                  ? "Hasil catatan sesi coaching Anda oleh Coach/Mentor akan muncul di sini." 
+                  : "Catat sesi coaching Anda bersama atasan, tetapkan tujuan, dan evaluasi hasil secara berkala."}
               </p>
-              <Link 
-                href="/coaching/create"
-                className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-coach-record text-white font-medium text-sm rounded-lg hover:bg-coach-record/90 transition-colors"
-              >
-                Tambah Catatan
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+              {user.user_metadata?.role !== "karyawan" ? (
+                <Link 
+                  href="/coaching/create"
+                  className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-coach-record text-white font-medium text-sm rounded-lg hover:bg-coach-record/90 transition-colors"
+                >
+                  Tambah Catatan
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <div className="inline-flex items-center justify-center w-full px-4 py-2.5 bg-slate-100 text-slate-400 font-medium text-sm rounded-lg cursor-not-allowed">
+                  Menunggu Sesi Selesai
+                </div>
+              )}
             </div>
           </div>
         )}
