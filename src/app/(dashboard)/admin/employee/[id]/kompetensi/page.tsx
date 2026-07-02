@@ -31,7 +31,7 @@ export default function KompetensiFormPage({ params }: { params: Promise<{ id: s
   const [errorSubmit, setErrorSubmit] = useState("");
 
   const methods = useForm<KompetensiManajerialValues>({
-    resolver: zodResolver(KompetensiManajerialSchema),
+    resolver: zodResolver(KompetensiManajerialSchema) as any,
     defaultValues: {
       integritas: 0,
       kerjasama: 0,
